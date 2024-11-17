@@ -19,6 +19,30 @@ jobs:
         run: dotnet test
       - name: publish artifacts
         run: dotnet publish --no-restore --no-build --configuration Release --output artifacts/backend src/devschool-ci-test.csproj
+  notify:
+    runs-on: ubuntu-latest
+    needs: build
+    env:
+      SLACK_USERNAME: github
+      SLACK_WEBHOOK: ${{ secrets.LOOP_WEBHOOK }}
+      SLACK_CHANNEL: devschool-test-notifications
+    steps:
+      - name: send success notification
+        if: ${{ needs.build.result == 'success'}}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: success
+          SLACK_MESSAGE: |
+            ${{ format('Author: {0}', github.actor) }}
+            ${{ format('Build: {0} done', github.run_number) }}
+      - name: send error notification
+        if: ${{ needs.build.result == 'failure'}}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: error
+          SLACK_MESSAGE: |
+            ${{ format('Author: {0}', github.actor) }}
+            ${{ format('Build: {0} failed', github.run_number) }}
 #      - name: Login to GitHub container registry
 #        uses: docker/login-action@v3
 #        with:
